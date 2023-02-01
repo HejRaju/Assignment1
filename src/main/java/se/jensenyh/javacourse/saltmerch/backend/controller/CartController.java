@@ -41,10 +41,10 @@ public class CartController {
         }
     }
 
-    @DeleteMapping("carts/id")
+    @DeleteMapping("carts/{id}")
     public void clearCart(@PathVariable("id") int id,
                                               @RequestParam @Nullable boolean buyout){
-        cartService.emptyCart(id == 1);
+        cartService.emptyCart(!buyout);
 
     }
 }
