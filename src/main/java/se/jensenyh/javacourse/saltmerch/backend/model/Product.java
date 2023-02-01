@@ -8,10 +8,9 @@ import java.util.List;
 
 public class Product implements Serializable
 {
-    @JsonProperty
-    public int id;
-    public String category,title,description,previewImage;
-    public List<ColorVariant>colorVariants;
+    @JsonProperty public int id;
+    @JsonProperty public String category,title,description,previewImage;
+    @JsonProperty public List<ColorVariant>colorVariants;
 
     // todo: needs fields: int id, String category, String title, String description, String previewImage, and List of ColorVariant colorVariants
 

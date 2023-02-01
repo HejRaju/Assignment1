@@ -6,9 +6,8 @@ public class CartItem {
     // todo: needs fields: int productId, String title, String color, String size, String previewImage, and int quantity
 
     // todo: all fields should be public and annotated with @JsonProperty
-    @JsonProperty
-    public int productId, quantity;
-    public String title, size, color, previewImage;
+    @JsonProperty public int productId, quantity;
+    @JsonProperty public String title, size, color, previewImage;
 
 
     // todo: needs 3 constructors:

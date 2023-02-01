@@ -1,100 +1,69 @@
 package se.jensenyh.javacourse.saltmerch.backend.repository;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.stereotype.Repository;
-import se.jensenyh.javacourse.saltmerch.backend.model.CartItem;
 import se.jensenyh.javacourse.saltmerch.backend.model.ColorVariant;
 import se.jensenyh.javacourse.saltmerch.backend.model.Product;
 import se.jensenyh.javacourse.saltmerch.backend.model.SizeContainer;
 
-
 @Repository
 public class ProductRepository
 {
-@Autowired
-     JdbcTemplate jdbcTemplate;
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
-    // NOTE: LEAVE THIS RECORD AS IT IS!
-    private record VariantWImages(int id, String colorName, String imagesCsv) {}
-
-
-
-    /** Only calls selectAll(String category) with a null category;
-     * Useful for reading ALL products, regardless of category. */
-
-    public List<Product> selectAll()
-    {
-        return selectAll(null);
-
+    public ProductRepository(JdbcTemplate template) {
+        this.jdbcTemplate = template;
     }
 
-    // todo: this method needs you to write its SQL query
-    /** Reads all rows from the products table and returns them as a List of Products. */
-    public List<Product> selectAll(String category)
-    {
-        // todo: write an SQL query that only selects all rows from the products table
-        String sql = "SELECT * FROM products";// <<<< todo: WRITE SQL QUERY HERE
+    private record VariantWImages(int id, String colorName, String imagesCsv) {}
 
-        
-        
-        // NOTE: leave this line as it is!
+    public List<Product> selectAll() {
+
+        return selectAll(null);
+    }
+
+    public List<Product> selectAll(String category) {
+
+        String sql = "SELECT * FROM products";
+
         if (category != null) sql += " WHERE category = (:category)";
-        
-        
-        
-        // todo: create a RowMapper for the Product class,
-        //  using the constructor that takes id, category, title, description, and previewImage
-        // NOTE: have in mind that the column name that corresponds to previewImage is preview_image
-        RowMapper<Product> rm = (rs,rowNum)-> new Product(
+
+        RowMapper<Product> rm = (rs, rowNum) -> new Product(
                 rs.getInt("id"),
                 rs.getString("category"),
                 rs.getString("title"),
                 rs.getString("description"),
-                rs.getString("preview_Image")
+                rs.getString("preview_image")
+        );
 
-        );// <<<< todo: CREATE RowMapper HERE= (rs, rowNum) -> new Product(; rs.getId());
-
-
-
-        
-        // NOTE: leave the rest as it is!
         Map<String, Object> paramMap = new HashMap<>();
         paramMap.put("category", category);
         return new NamedParameterJdbcTemplate(jdbcTemplate).query(sql, paramMap, rm);
     }
-    
-    /** Only calls selectAll(String category) with a specific category.
-     * Useful for reading all products of a specific category. */
-    public List<Product> selectAllOfCategory(String category)
-    {
+    public List<Product> selectAllOfCategory(String category) {
+
         return selectAll(category);
     }
-    
-    // NOTE: NO NEED TO MODIFY THIS METHOD!
-    /** Inserts a new product in the database, together with its
-     *      variants, including images and sizes. It takes a
-     *      Product parameter containing everything. */
-    public Product insertProductAndProps(Product prod, String category)
-    {
+    public Product insertProductAndProps(Product prod, String category) {
+
         var sql = """
                 INSERT INTO products (category, title, description, preview_image)
                 VALUES (?, ?, ?, ?) RETURNING id;""";
         RowMapper<Integer> rm = (rs, rowNum) -> rs.getInt("id");
         List<Integer> pids = jdbcTemplate.query(sql, rm, category, prod.title,
-                                                prod.description, prod.previewImage);
+                prod.description, prod.previewImage);
         int pid = pids.size() > 0 ? pids.get(0) : -1;
-        
+
         Product newProd = null;
         if (pid > -1)
         {
@@ -104,7 +73,7 @@ public class ProductRepository
             newProd.title = prod.title;
             newProd.description = prod.description;
             newProd.previewImage = prod.previewImage;
-            
+
             for (ColorVariant v : prod.colorVariants)
             {
                 ColorVariant newv = new ColorVariant();
@@ -113,11 +82,11 @@ public class ProductRepository
                         INSERT INTO variants (color_name, product_id) VALUES (?, ?) RETURNING id;""";
                 List<Integer> vids = jdbcTemplate.query(sqlv, rmv, v.colorName, pid);
                 int vid = vids.size() > 0 ? vids.get(0) : -1;
-                
+
                 if (vid > -1)
                 {
                     newv.colorName = v.colorName;
-                    
+
                     for (String url : v.images)
                     {
                         var sqli = """
@@ -140,12 +109,9 @@ public class ProductRepository
         }
         return newProd;
     }
-    
-    // NOTE: NO NEED TO MODIFY THIS METHOD!
-    /** Updates a specific row in the products table
-     *  (only its title, description, and preview_image). */
-    public int updateProductMeta(int id, Product prod)
-    {
+
+    public int updateProductMeta(int id, Product prod) {
+
         Product oldProd = getProductBase(id);
         if (oldProd == null)
             return -9;
@@ -164,28 +130,24 @@ public class ProductRepository
             return jdbcTemplate.update(sql, title, desc, img, id);
         }
     }
-    
-    // todo: this method needs you to write its SQL query and execute it
-    // NOTE: optional
-    /** Deletes a specific row from the products table. */
-    public int deleteProduct(int id)
-    {
-        // todo: write the SQL query for deleting a single product
+
+    public int deleteProduct(int id) {
+
+        Product oldProd = getProductBase(id);
+        if (oldProd == null)
+            return -1;
+
         var sql = """
-                DELETE FROM products
-                where id= ?;
-                """;// <<<< todo: WRITE SQL QUERY HERE
-        
-        
-        // todo: execute the query while also passing the id as a parameter
-        return jdbcTemplate.update(sql,id);// <<<< todo: call jdbcTemplate method here
+                DELETE
+                FROM products
+                WHERE id = ?
+                """;
+
+
+        return jdbcTemplate.update(sql, id);
     }
-    
-    // NOTE: NO NEED TO MODIFY THIS METHOD!
-    /** Reads rows from products, variants, images, and sizes,
-     * constructs ONE Product object from them, and returns it. */
-    public Product getEntireProduct(int productId)
-    {
+    public Product getEntireProduct(int productId) {
+
         Product product = getProductBase(productId);
         if (product == null)
         {
@@ -211,15 +173,12 @@ public class ProductRepository
             }
             product.colorVariants.add(colorVariant);
         }
-        
+
         return product;
     }
-    
-    // NOTE: NO NEED TO MODIFY THIS METHOD!
-    /** Utility method used in getEntireProduct().
-     *      Reads rows from variants and images tables. */
-    public List<VariantWImages> getVariantsAndImages(int productId)
-    {
+
+    public List<VariantWImages> getVariantsAndImages(int productId) {
+
         var sql = """
                 SELECT v.id AS v_id, v.color_name,
                 	STRING_AGG(url, ',') images
@@ -235,12 +194,9 @@ public class ProductRepository
                 rs.getString("images"));
         return jdbcTemplate.query(sql, rm, productId);
     }
-    
-    // NOTE: NO NEED TO MODIFY THIS METHOD!
-    /** Utility method used in getEntireProduct().
-     *      Reads a row from sizes table. */
-    public List<SizeContainer> getVariantSizes(int variantId)
-    {
+
+    public List<SizeContainer> getVariantSizes(int variantId) {
+
         var sql = """
                 SELECT size, stock
                 FROM variants v
@@ -253,23 +209,20 @@ public class ProductRepository
                 rs.getInt("stock"));
         return jdbcTemplate.query(sql, rm, variantId);
     }
-    
-    // NOTE: NO NEED TO MODIFY THIS METHOD!
-    /** Inserts rows into variants, images, and sizes,
-     * thus creating a new variant for a specific product. */
-    public ColorVariant addVariant(int productId, ColorVariant colorVariant)
-    {
+
+    public ColorVariant addVariant(int productId, ColorVariant colorVariant) {
+
         ColorVariant newv = new ColorVariant();
         RowMapper<Integer> rmv = (rs, rowNum) -> rs.getInt("id");
         var sqlv = """
                 INSERT INTO variants (color_name, product_id) VALUES (?, ?) RETURNING id;""";
         List<Integer> vids = jdbcTemplate.query(sqlv, rmv, colorVariant.colorName, productId);
         int vid = vids.size() > 0 ? vids.get(0) : -1;
-        
+
         if (vid > -1)
         {
             newv.colorName = colorVariant.colorName;
-            
+
             for (String url : colorVariant.images)
             {
                 var sqli = "INSERT INTO images (url, variant_id) VALUES (?, ?);";
@@ -287,27 +240,24 @@ public class ProductRepository
         }
         return newv;
     }
-    
-    // todo: this method needs you to write its SQL query
-    // NOTE: optional
-    /** Delete a specific row from variants. */
-    public int deleteVariant(int productId, String color)
-    {
-        // todo: write the SQL query for deleting a variant
-        //  with specific product_id and color_name
-        var sql = "DELETE FROM VARIANTS WHERE product_id = ? AND color_name = ?";// <<<< todo: WRITE SQL QUERY HERE
-    
-    
-        // todo: execute the query while also passing the id as a parameter
-        return jdbcTemplate.update(sql,productId);// <<<< todo: call jdbcTemplate method here
+
+    public int deleteVariant(int productId, String color) {
+
+        Product oldProd = getProductBase(productId);
+        if (oldProd == null)
+            return -1;
+
+        var sql = "DELETE FROM variants WHERE product_id = ? AND color_name = ?";
+
+        return jdbcTemplate.update(sql, productId, color);
     }
-    
-    // NOTE: the endpoint that's supposed to use this method is OPTIONAL!
-    // NOTE: NO NEED TO MODIFY THIS METHOD!
-    /** Restocks a specific product variant, i.e.
-     *      adds a certain number to its stock. */
-    public int restockSize(int productId, String size, String color, int qty)
-    {
+
+    public int restockSize(int productId, String size, String color, int qty) {
+
+        Product oldProd = getProductBase(productId);
+        if (oldProd == null)
+            return -1;
+
         var sql = """
                 UPDATE sizes SET stock = stock + ?
                 WHERE id = (
@@ -317,14 +267,15 @@ public class ProductRepository
                     WHERE product_id = ? AND size = ? AND color_name = ?);""";
         return jdbcTemplate.update(sql, qty, productId, size, color);
     }
-    
-    // NOTE: NO NEED TO MODIFY THIS METHOD!
-    /** Utility function used in other methods.
-     *      Only reads a product's metadata. */
-    private Product getProductBase(int productId)
-    {
+
+    private Product getProductBase(int productId) {
+
         RowMapper<Product> rm = (rs, rowNum) -> new Product(
-        );
+                rs.getInt("id"),
+                rs.getString("category"),
+                rs.getString("title"),
+                rs.getString("description"),
+                rs.getString("preview_image"));
         var sql = "SELECT * FROM products WHERE id = ?";
         List<Product> products = jdbcTemplate.query(sql, rm, productId);
         return products.size() > 0 ? products.get(0) : null;

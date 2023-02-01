@@ -4,9 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SizeContainer
 {
-    @JsonProperty
-    public String size;
-    public int stock;
+    @JsonProperty public String size;
+    @JsonProperty public int stock;
 
     public SizeContainer() {
     }

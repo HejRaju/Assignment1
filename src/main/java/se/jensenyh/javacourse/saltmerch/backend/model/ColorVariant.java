@@ -13,10 +13,9 @@ public class ColorVariant
     // todo: needs fields: String colorName, List of String images, List of SizeContainer sizes
 
     // todo: all fields should be public and annotated with @JsonProperty
-    @JsonProperty
-    public String colorName;
-    public List<String> images = new ArrayList<String>();
-    public List<SizeContainer> sizes = new ArrayList<SizeContainer>();
+    @JsonProperty public String colorName;
+    @JsonProperty public List<String> images = new ArrayList<String>();
+    @JsonProperty public List<SizeContainer> sizes = new ArrayList<SizeContainer>();
 
 
     // todo: needs 2 constructors:
